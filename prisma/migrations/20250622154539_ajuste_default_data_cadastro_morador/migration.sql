@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `morador` MODIFY `data_cadastro` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3);

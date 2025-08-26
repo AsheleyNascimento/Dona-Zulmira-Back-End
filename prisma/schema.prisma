@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model evolucaoindividual {
+  id_evolucao_individual Int                    @id @default(autoincrement())
+  id_morador             Int
+  id_usuario             Int
+  data_hora              DateTime               @default(now())
+  observacoes            String
+  morador                morador                @relation(fields: [id_morador], references: [id_morador], map: "EvolucaoIndividual_id_morador_fkey")
+  usuario                usuario                @relation(fields: [id_usuario], references: [id_usuario], map: "EvolucaoIndividual_id_usuario_fkey")
+  relatoriodiariogeral   relatoriodiariogeral[]
+
+  @@index([id_morador], map: "EvolucaoIndividual_id_morador_fkey")
+  @@index([id_usuario], map: "EvolucaoIndividual_id_usuario_fkey")
+}
+
+model medicacao {
+  id_medicacao              Int                   @id @default(autoincrement())
+  id_usuario                Int
+  id_medicamento_prescricao Int
+  data_hora                 DateTime              @default(now())
+  medicamentoprescricao     medicamentoprescricao @relation(fields: [id_medicamento_prescricao], references: [id_medicamento_prescricao], map: "Medicacao_id_medicamento_prescricao_fkey")
+  usuario                   usuario               @relation(fields: [id_usuario], references: [id_usuario], map: "Medicacao_id_usuario_fkey")
+
+  @@index([id_medicamento_prescricao], map: "Medicacao_id_medicamento_prescricao_fkey")
+  @@index([id_usuario], map: "Medicacao_id_usuario_fkey")
+}
+
+model medicamento {
+  id_medicamento        Int                     @id @default(autoincrement())
+  nome_medicamento      String
+  situacao              Boolean
+  medicamentoprescricao medicamentoprescricao[]
+}
+
+model medicamentoprescricao {
+  id_medicamento_prescricao Int         @id @default(autoincrement())
+  id_medicamento            Int
+  id_prescricao             Int
+  posologia                 String
+  medicacao                 medicacao[]
+  medicamento               medicamento @relation(fields: [id_medicamento], references: [id_medicamento], map: "MedicamentoPrescricao_id_medicamento_fkey")
+  prescricao                prescricao  @relation(fields: [id_prescricao], references: [id_prescricao], map: "MedicamentoPrescricao_id_prescricao_fkey")
+
+  @@index([id_medicamento], map: "MedicamentoPrescricao_id_medicamento_fkey")
+  @@index([id_prescricao], map: "MedicamentoPrescricao_id_prescricao_fkey")
+}
+
+model medico {
+  id_medico     Int          @id @default(autoincrement())
+  nome_completo String
+  crm           String       @unique(map: "Medico_crm_key")
+  situacao      Boolean
+  usuario_criacao String // Adicionado
+  prescricao    prescricao[]
+}
+
+model morador {
+  id_morador         Int                  @id @default(autoincrement())
+  nome_completo      String
+  id_usuario         Int
+  data_cadastro      DateTime             @default(now())
+  cpf                String               @unique(map: "Morador_cpf_key")
+  rg                 String
+  situacao           Boolean
+  evolucaoindividual evolucaoindividual[]
+  usuario            usuario              @relation(fields: [id_usuario], references: [id_usuario], map: "Morador_id_usuario_fkey")
+  prescricao         prescricao[]
+
+  @@index([id_usuario], map: "Morador_id_usuario_fkey")
+}
+
+model prescricao {
+  id_prescricao         Int                     @id @default(autoincrement())
+  id_morador            Int
+  id_medico             Int
+  mes                   String
+  ano                   String
+  medicamentoprescricao medicamentoprescricao[]
+  medico                medico                  @relation(fields: [id_medico], references: [id_medico], map: "Prescricao_id_medico_fkey")
+  morador               morador                 @relation(fields: [id_morador], references: [id_morador], map: "Prescricao_id_morador_fkey")
+
+  @@index([id_medico], map: "Prescricao_id_medico_fkey")
+  @@index([id_morador], map: "Prescricao_id_morador_fkey")
+}
+
+model relatoriodiariogeral {
+  id_relatorio_diario_geral Int                @id @default(autoincrement())
+  id_usuario                Int
+  id_evolucao_individual    Int
+  data_hora                 DateTime           @default(now())
+  observacoes               String
+  evolucaoindividual        evolucaoindividual @relation(fields: [id_evolucao_individual], references: [id_evolucao_individual], map: "RelatorioDiarioGeral_id_evolucao_individual_fkey")
+  usuario                   usuario            @relation(fields: [id_usuario], references: [id_usuario], map: "RelatorioDiarioGeral_id_usuario_fkey")
+
+  @@index([id_evolucao_individual], map: "RelatorioDiarioGeral_id_evolucao_individual_fkey")
+  @@index([id_usuario], map: "RelatorioDiarioGeral_id_usuario_fkey")
+}
+
+model usuario {
+  id_usuario           Int                    @id @default(autoincrement())
+  nome_usuario         String                 @unique(map: "Usuario_nome_usuario_key")
+  nome_completo        String
+  cpf                  String                 @unique(map: "Usuario_cpf")
+  senha_hash           String
+  email                String                 @unique(map: "Usuario_email_key")
+  funcao               String
+  situacao             Boolean
+  evolucaoindividual   evolucaoindividual[]
+  medicacao            medicacao[]
+  morador              morador[]
+  relatoriodiariogeral relatoriodiariogeral[]
+}
+
+

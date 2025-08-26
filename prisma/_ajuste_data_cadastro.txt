@@ -1,0 +1,4 @@
+// Atualização automática do campo data_cadastro para o model morador
+// Adicione @default(now()) ao campo data_cadastro
+// Exemplo:
+// data_cadastro DateTime @default(now())
