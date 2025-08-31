@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsString, IsOptional, IsInt } from 'class-validator';
 
 export class CreateMedicoDto {
   @IsString()
@@ -13,9 +13,9 @@ export class CreateMedicoDto {
   @IsNotEmpty()
   situacao: boolean;
 
-  @IsString()
-  @IsNotEmpty()
-  usuario_criacao: string;
+  @IsInt()
+  @IsOptional()
+  id_usuario?: number;
 }
 
 

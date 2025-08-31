@@ -119,12 +119,32 @@ export class MoradorService {
       );
     }
 
-    // Se 'data_cadastro' for atualizado, convertê-lo para Date
+    // Só verifica duplicidade se o CPF foi alterado
+    let cpfAlterado = false;
+    if (updateMoradorDto.cpf && updateMoradorDto.cpf !== morador.cpf) {
+      cpfAlterado = true;
+      const cpfLimpo = updateMoradorDto.cpf.replace(/\D/g, '');
+      const cpfExistente = await this.prisma.morador.findFirst({
+        where: {
+          AND: [
+            { cpf: cpfLimpo },
+            { id_morador: { not: id } }
+          ]
+        },
+      });
+      if (cpfExistente) {
+        throw new ConflictException('CPF já cadastrado para outro morador.');
+      }
+    }
+
+    // Monta o objeto de atualização
     const data: any = { ...updateMoradorDto };
+    if (!cpfAlterado) {
+      delete data.cpf;
+    }
     if (updateMoradorDto.data_cadastro) {
       data.data_cadastro = new Date(updateMoradorDto.data_cadastro);
     }
-    // Remove qualquer referência a id_usuario
     delete data.id_usuario;
 
     return this.prisma.morador.update({

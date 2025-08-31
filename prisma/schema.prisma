@@ -58,8 +58,10 @@ model medico {
   nome_completo String
   crm           String       @unique(map: "Medico_crm_key")
   situacao      Boolean
-  usuario_criacao String // Adicionado
+  id_usuario    Int
+  usuario       usuario      @relation(fields: [id_usuario], references: [id_usuario], map: "Medico_id_usuario_fkey")
   prescricao    prescricao[]
+  @@index([id_usuario], map: "Medico_id_usuario_fkey")
 }
 
 model morador {
@@ -117,6 +119,7 @@ model usuario {
   medicacao            medicacao[]
   morador              morador[]
   relatoriodiariogeral relatoriodiariogeral[]
+  medico               medico[]
 }
 
 
