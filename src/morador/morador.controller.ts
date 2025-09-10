@@ -51,7 +51,7 @@ export class MoradorController {
   }
 
   @Get()
-  @Roles('Administrador')
+  @Roles('Administrador', 'Enfermeiro', 'Cuidador')
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -69,7 +69,7 @@ export class MoradorController {
   }
 
   @Get(':id')
-  @Roles('Administrador')
+  @Roles('Administrador', 'Enfermeiro', 'Cuidador')
   findOne(@Param('id', ParseIntIdPipe) id: number) {
     return this.moradorService.findOne(+id);
   }

@@ -15,7 +15,7 @@ export class MedicamentoPrescricaoController {
   constructor(private readonly service: MedicamentoPrescricaoService) {}
 
   @Post()
-  @Roles('Enfermeiro', 'Cuidador')
+  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
   @ApiOperation({ summary: 'Criar um novo vínculo de medicamento à prescrição' })
   @ApiBody({ type: CreateMedicamentoPrescricaoDto })
   @ApiResponse({ status: 201, description: 'Vínculo criado com sucesso.' })
@@ -44,7 +44,7 @@ export class MedicamentoPrescricaoController {
   }
 
   @Patch(':id')
-  @Roles('Enfermeiro', 'Cuidador')
+  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
   @ApiOperation({ summary: 'Atualizar vínculo' })
   @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: UpdateMedicamentoPrescricaoDto })
@@ -54,7 +54,7 @@ export class MedicamentoPrescricaoController {
   }
 
   @Delete(':id')
-  @Roles('Enfermeiro', 'Cuidador')
+  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
   @ApiOperation({ summary: 'Remover vínculo' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Vínculo removido.' })

@@ -89,18 +89,20 @@ export class MoradorService {
   async findOne(id: number) {
     const morador = await this.prisma.morador.findUnique({
       where: { id_morador: id },
-      include: {
-        usuario: {
-          select: {
-            cpf: true,
-          },
-        },
+      select: {
+        id_morador: true,
+        nome_completo: true,
+        id_usuario: true,
+        data_cadastro: true,
+        cpf: true,
+        rg: true,
+        situacao: true,
+        usuario: { select: { cpf: true } },
       },
     });
     if (!morador) {
       throw new NotFoundException(`Morador com ID ${id} não encontrado.`);
     }
-    // Mapeia para trazer o cpf_usuario_cadastro no root do objeto
     return {
       ...morador,
       cpf_usuario_cadastro: morador.usuario?.cpf,
