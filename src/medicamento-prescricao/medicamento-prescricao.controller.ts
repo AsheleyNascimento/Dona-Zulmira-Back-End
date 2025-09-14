@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Req } from '@nestjs/common';
 import { MedicamentoPrescricaoService } from './medicamento-prescricao.service';
 import { CreateMedicamentoPrescricaoDto } from './dto/create-medicamento-prescricao.dto';
 import { UpdateMedicamentoPrescricaoDto } from './dto/update-medicamento-prescricao.dto';
@@ -19,8 +19,8 @@ export class MedicamentoPrescricaoController {
   @ApiOperation({ summary: 'Criar um novo vínculo de medicamento à prescrição' })
   @ApiBody({ type: CreateMedicamentoPrescricaoDto })
   @ApiResponse({ status: 201, description: 'Vínculo criado com sucesso.' })
-  create(@Body() dto: CreateMedicamentoPrescricaoDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateMedicamentoPrescricaoDto, @Req() req) {
+    return this.service.create(dto, req.user.id);
   }
 
   @Get()
