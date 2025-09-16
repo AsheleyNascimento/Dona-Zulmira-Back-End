@@ -23,12 +23,12 @@ export class EvolucaoIndividualService {
   }
 
   async findAll(params: { page?: number; limit?: number; id_morador?: number; id_usuario?: number; data_inicio?: string; data_fim?: string; observacoes?: string }) {
-    const page = params.page || 1;
-    const limit = params.limit || 10;
-    const skip = (page - 1) * limit;
-    const where: any = {};
-    if (params.id_morador) where.id_morador = params.id_morador;
-    if (params.id_usuario) where.id_usuario = params.id_usuario;
+  const page = params.page ? Number(params.page) : 1;
+  const limit = params.limit ? Number(params.limit) : 10;
+  const skip = (page - 1) * limit;
+      const where: any = {};
+      if (params.id_morador) where.id_morador = Number(params.id_morador);
+      if (params.id_usuario) where.id_usuario = Number(params.id_usuario);
     if (params.data_inicio || params.data_fim) {
       where.data_hora = {};
       if (params.data_inicio) where.data_hora.gte = new Date(params.data_inicio);
@@ -37,15 +37,29 @@ export class EvolucaoIndividualService {
     if (params.observacoes) {
       where.observacoes = { contains: params.observacoes };
     }
-    const [data, total] = await this.prisma.$transaction([
-      this.prisma.evolucaoindividual.findMany({ skip, take: limit, where }),
-      this.prisma.evolucaoindividual.count({ where }),
-    ]);
+      const [data, total] = await this.prisma.$transaction([
+        this.prisma.evolucaoindividual.findMany({
+          skip: Number(skip),
+          take: Number(limit),
+          where,
+          include: {
+            usuario: { select: { nome_usuario: true } },
+            morador: { select: { nome_completo: true } }
+          }
+        }),
+        this.prisma.evolucaoindividual.count({ where }),
+      ]);
     return { data, total, page, lastPage: Math.ceil(total / limit) };
   }
 
   async findOne(id: number) {
-    const evolucao = await this.prisma.evolucaoindividual.findUnique({ where: { id_evolucao_individual: id } });
+    const evolucao = await this.prisma.evolucaoindividual.findUnique({
+      where: { id_evolucao_individual: id },
+      include: {
+        morador: { select: { nome_completo: true } },
+        usuario: { select: { nome_usuario: true } },
+      },
+    });
     if (!evolucao) throw new NotFoundException('Evolução individual não encontrada.');
     return evolucao;
   }

@@ -7,8 +7,14 @@ import { UpdateMedicamentoPrescricaoDto } from './dto/update-medicamento-prescri
 export class MedicamentoPrescricaoService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(dto: CreateMedicamentoPrescricaoDto) {
-    return this.prisma.medicamentoprescricao.create({ data: dto });
+  create(dto: CreateMedicamentoPrescricaoDto, userId?: number) {
+    return this.prisma.medicamentoprescricao.create({
+      data: {
+        ...dto,
+        ...(userId ? { id_usuario: userId } : {}),
+      },
+      include: { medicamento: true, prescricao: true, medicacao: true },
+    });
   }
 
   async findAll(params: { page?: number; limit?: number } = {}) {

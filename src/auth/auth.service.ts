@@ -86,6 +86,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
+      funcao: usuario.funcao // Inclui a função do usuário na resposta
     };
   }
 

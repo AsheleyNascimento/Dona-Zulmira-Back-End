@@ -14,7 +14,6 @@ import {
 import { MedicamentosService } from './medicamentos.service';
 import { CreateMedicamentoDto } from './dto/create-medicamento.dto';
 import { UpdateMedicamentoDto } from './dto/update-medicamento.dto';
-import { RolesGuard } from '../app/common/guards/roles.guard';
 import { AuthTokenGuard } from '../app/common/guards/auth-token.guard';
 import { Roles } from '../app/common/decorators/roles.decorator';
 import {
@@ -46,22 +45,30 @@ export class MedicamentosController {
         message: 'Cadastro efetuado com sucesso',
         medicamento,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      const statusCode =
+        error && typeof error === 'object' && 'status' in error
+          ? (error as { status?: number }).status || 400
+          : 400;
+      const message =
+        error && typeof error === 'object' && 'message' in error
+          ? (error as { message?: string }).message ||
+            'Erro ao cadastrar medicamento'
+          : 'Erro ao cadastrar medicamento';
       return {
-        statusCode: error.status || 400,
-        message: error.message || 'Erro ao cadastrar medicamento',
+        statusCode,
+        message,
       };
     }
   }
 
   @Get()
-  @Roles('Administrador')
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('nome_medicamento') nome_medicamento?: string,
   ) {
-    const filters: any = {};
+    const filters: { nome_medicamento?: string } = {};
     if (nome_medicamento) filters.nome_medicamento = nome_medicamento;
     return this.medicamentosService.findAll(
       Number(page) || 1,
@@ -71,7 +78,6 @@ export class MedicamentosController {
   }
 
   @Get(':id')
-  @Roles('Administrador')
   findOne(@Param('id') id: string) {
     return this.medicamentosService.findOne(Number(id));
   }
@@ -89,13 +95,19 @@ export class MedicamentosController {
     @Body() updateMedicamentoDto: UpdateMedicamentoDto,
   ) {
     try {
-      const antigo = await this.medicamentosService.findOne(Number(id));
-      if (!antigo) {
+      const antigoResult: unknown = await this.medicamentosService.findOne(
+        Number(id),
+      );
+      if (!antigoResult) {
         return {
           statusCode: 404,
           message: 'Medicamento não encontrado',
         };
       }
+      const antigo = antigoResult as {
+        nome_medicamento?: string;
+        situacao?: boolean;
+      };
       const atualizado = await this.medicamentosService.update(
         Number(id),
         updateMedicamentoDto,
@@ -121,10 +133,19 @@ export class MedicamentosController {
             : 'Nenhuma alteração detectada',
         medicamento: atualizado,
       };
-    } catch (error) {
+    } catch (error: unknown) {
+      const statusCode =
+        error && typeof error === 'object' && 'status' in error
+          ? (error as { status?: number }).status || 400
+          : 400;
+      const message =
+        error && typeof error === 'object' && 'message' in error
+          ? (error as { message?: string }).message ||
+            'Erro ao atualizar medicamento'
+          : 'Erro ao atualizar medicamento';
       return {
-        statusCode: error.status || 400,
-        message: error.message || 'Erro ao atualizar medicamento',
+        statusCode,
+        message,
       };
     }
   }

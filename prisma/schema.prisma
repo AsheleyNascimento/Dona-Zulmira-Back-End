@@ -45,12 +45,15 @@ model medicamentoprescricao {
   id_medicamento            Int
   id_prescricao             Int
   posologia                 String
+  id_usuario                Int?
   medicacao                 medicacao[]
   medicamento               medicamento @relation(fields: [id_medicamento], references: [id_medicamento], map: "MedicamentoPrescricao_id_medicamento_fkey")
   prescricao                prescricao  @relation(fields: [id_prescricao], references: [id_prescricao], map: "MedicamentoPrescricao_id_prescricao_fkey")
+  usuario                   usuario?    @relation(fields: [id_usuario], references: [id_usuario], map: "MedicamentoPrescricao_id_usuario_fkey")
 
   @@index([id_medicamento], map: "MedicamentoPrescricao_id_medicamento_fkey")
   @@index([id_prescricao], map: "MedicamentoPrescricao_id_prescricao_fkey")
+  @@index([id_usuario], map: "MedicamentoPrescricao_id_usuario_fkey")
 }
 
 model medico {
@@ -58,8 +61,10 @@ model medico {
   nome_completo String
   crm           String       @unique(map: "Medico_crm_key")
   situacao      Boolean
-  usuario_criacao String // Adicionado
+  id_usuario    Int
+  usuario       usuario      @relation(fields: [id_usuario], references: [id_usuario], map: "Medico_id_usuario_fkey")
   prescricao    prescricao[]
+  @@index([id_usuario], map: "Medico_id_usuario_fkey")
 }
 
 model morador {
@@ -115,8 +120,10 @@ model usuario {
   situacao             Boolean
   evolucaoindividual   evolucaoindividual[]
   medicacao            medicacao[]
+  medicamentoprescricao medicamentoprescricao[]
   morador              morador[]
   relatoriodiariogeral relatoriodiariogeral[]
+  medico               medico[]
 }
 
 

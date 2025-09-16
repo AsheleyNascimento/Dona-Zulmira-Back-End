@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Req } from '@nestjs/common';
 import { MedicamentoPrescricaoService } from './medicamento-prescricao.service';
 import { CreateMedicamentoPrescricaoDto } from './dto/create-medicamento-prescricao.dto';
 import { UpdateMedicamentoPrescricaoDto } from './dto/update-medicamento-prescricao.dto';
@@ -15,12 +15,12 @@ export class MedicamentoPrescricaoController {
   constructor(private readonly service: MedicamentoPrescricaoService) {}
 
   @Post()
-  @Roles('Enfermeiro', 'Cuidador')
+  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
   @ApiOperation({ summary: 'Criar um novo vínculo de medicamento à prescrição' })
   @ApiBody({ type: CreateMedicamentoPrescricaoDto })
   @ApiResponse({ status: 201, description: 'Vínculo criado com sucesso.' })
-  create(@Body() dto: CreateMedicamentoPrescricaoDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateMedicamentoPrescricaoDto, @Req() req) {
+    return this.service.create(dto, req.user.id);
   }
 
   @Get()
@@ -44,7 +44,7 @@ export class MedicamentoPrescricaoController {
   }
 
   @Patch(':id')
-  @Roles('Enfermeiro', 'Cuidador')
+  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
   @ApiOperation({ summary: 'Atualizar vínculo' })
   @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: UpdateMedicamentoPrescricaoDto })
@@ -54,7 +54,7 @@ export class MedicamentoPrescricaoController {
   }
 
   @Delete(':id')
-  @Roles('Enfermeiro', 'Cuidador')
+  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
   @ApiOperation({ summary: 'Remover vínculo' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Vínculo removido.' })

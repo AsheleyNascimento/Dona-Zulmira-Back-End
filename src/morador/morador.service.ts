@@ -89,18 +89,20 @@ export class MoradorService {
   async findOne(id: number) {
     const morador = await this.prisma.morador.findUnique({
       where: { id_morador: id },
-      include: {
-        usuario: {
-          select: {
-            cpf: true,
-          },
-        },
+      select: {
+        id_morador: true,
+        nome_completo: true,
+        id_usuario: true,
+        data_cadastro: true,
+        cpf: true,
+        rg: true,
+        situacao: true,
+        usuario: { select: { cpf: true } },
       },
     });
     if (!morador) {
       throw new NotFoundException(`Morador com ID ${id} não encontrado.`);
     }
-    // Mapeia para trazer o cpf_usuario_cadastro no root do objeto
     return {
       ...morador,
       cpf_usuario_cadastro: morador.usuario?.cpf,
@@ -119,12 +121,32 @@ export class MoradorService {
       );
     }
 
-    // Se 'data_cadastro' for atualizado, convertê-lo para Date
+    // Só verifica duplicidade se o CPF foi alterado
+    let cpfAlterado = false;
+    if (updateMoradorDto.cpf && updateMoradorDto.cpf !== morador.cpf) {
+      cpfAlterado = true;
+      const cpfLimpo = updateMoradorDto.cpf.replace(/\D/g, '');
+      const cpfExistente = await this.prisma.morador.findFirst({
+        where: {
+          AND: [
+            { cpf: cpfLimpo },
+            { id_morador: { not: id } }
+          ]
+        },
+      });
+      if (cpfExistente) {
+        throw new ConflictException('CPF já cadastrado para outro morador.');
+      }
+    }
+
+    // Monta o objeto de atualização
     const data: any = { ...updateMoradorDto };
+    if (!cpfAlterado) {
+      delete data.cpf;
+    }
     if (updateMoradorDto.data_cadastro) {
       data.data_cadastro = new Date(updateMoradorDto.data_cadastro);
     }
-    // Remove qualquer referência a id_usuario
     delete data.id_usuario;
 
     return this.prisma.morador.update({

@@ -1,3 +1,4 @@
+// ...existing code...
 import {
   Controller,
   Post,
@@ -24,6 +25,14 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from '@nes
 @UseGuards(AuthTokenGuard, RolesGuard)
 export class EvolucaoIndividualController {
   constructor(private readonly service: EvolucaoIndividualService) {}
+
+  @Get('morador/:id')
+  @ApiOperation({ summary: 'Listar evoluções individuais de um morador' })
+  @ApiResponse({ status: 200, description: 'Lista de evoluções do morador.' })
+  @Roles('Enfermeiro', 'Cuidador')
+  async evolucoesPorMorador(@Param('id') id: number) {
+    return this.service.findAll({ id_morador: Number(id), limit: 100 });
+  }
 
   @Post()
   @ApiOperation({ summary: 'Criar nova evolução individual' })

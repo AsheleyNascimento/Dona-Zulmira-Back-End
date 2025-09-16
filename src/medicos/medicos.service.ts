@@ -2,14 +2,29 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateMedicoDto } from './dto/create-medico.dto';
 import { UpdateMedicoDto } from './dto/update-medico.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+// import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class MedicosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(createMedicoDto: CreateMedicoDto) {
-    return this.prisma.medico.create({ data: createMedicoDto });
+  async create(createMedicoDto: CreateMedicoDto, id_usuario: number) {
+    const { id_usuario: _, ...dados } = createMedicoDto;
+    // Verifica se já existe CRM
+    const crmExistente = await this.prisma.medico.findUnique({
+      where: { crm: dados.crm },
+    });
+    if (crmExistente) {
+      throw new Error('Já existe um médico cadastrado com este CRM.');
+    }
+    return await this.prisma.medico.create({
+      data: {
+        ...dados,
+        usuario: {
+          connect: { id_usuario },
+        },
+      },
+    });
   }
 
   async findAll(name?: string) {
@@ -26,7 +41,6 @@ export class MedicosService {
   }
 
   async findOne(id: number) {
-    // Debug log removed before merging to production
     const medico = await this.prisma.medico.findUnique({
       where: { id_medico: Number(id) },
     });
@@ -35,6 +49,9 @@ export class MedicosService {
     }
     return medico;
   }
+
+  // ...existing code...
+  // ...existing code...
 
    async update(id: number, updateMedicoDto: UpdateMedicoDto) {
     return this.prisma.medico.update({
