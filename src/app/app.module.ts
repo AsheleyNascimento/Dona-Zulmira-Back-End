@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsuarioModule } from '../usuario/usuario.module';
@@ -9,12 +10,13 @@ import { EvolucaoIndividualModule } from '../evolucao-individual/evolucao-indivi
 import { RelatorioGeralModule } from '../relatorio-geral/relatorio-geral.module';
 import { MedicosModule } from 'src/medicos/medicos.module';
 import { PrescricaoModule } from 'src/prescricao/prescricao.module';
-import { MedicamentoPrescricao } from 'src/medicamento-prescricao/entities/medicamento-prescricao.entity';
 import { MedicamentoPrescricaoModule } from 'src/medicamento-prescricao/medicamento-prescricao.module';
 import { MedicacaoModule } from 'src/medicacao/medicacao.module';
+import { AiModule } from 'src/ai/ai.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     UsuarioModule,
     MoradorModule,
     AuthModule,
@@ -24,7 +26,8 @@ import { MedicacaoModule } from 'src/medicacao/medicacao.module';
     MedicosModule,
     PrescricaoModule,
     MedicamentoPrescricaoModule,
-    MedicacaoModule
+    MedicacaoModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
