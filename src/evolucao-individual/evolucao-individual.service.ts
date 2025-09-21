@@ -7,16 +7,26 @@ import { UpdateEvolucaoIndividualDto } from './dto/update-evolucao-individual.dt
 export class EvolucaoIndividualService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private sanitizeObservacoes(texto: string): string {
+    if (!texto) return texto;
+    const MAX = 1000;
+    if (texto.length > MAX) {
+      return texto.slice(0, MAX);
+    }
+    return texto;
+  }
+
   async create(createDto: CreateEvolucaoIndividualDto, userId: number) {
     // Validação de existência do morador
     const morador = await this.prisma.morador.findUnique({ where: { id_morador: createDto.id_morador } });
     if (!morador) {
       throw new NotFoundException('Morador não encontrado para cadastro da evolução.');
     }
+    const observacoesSanit = this.sanitizeObservacoes(createDto.observacoes);
     return this.prisma.evolucaoindividual.create({
       data: {
         id_morador: createDto.id_morador,
-        observacoes: createDto.observacoes,
+        observacoes: observacoesSanit,
         id_usuario: userId,
       },
     });
@@ -67,7 +77,11 @@ export class EvolucaoIndividualService {
   async update(id: number, updateDto: UpdateEvolucaoIndividualDto) {
     const evolucao = await this.prisma.evolucaoindividual.findUnique({ where: { id_evolucao_individual: id } });
     if (!evolucao) throw new NotFoundException('Evolução individual não encontrada.');
-    const updated = await this.prisma.evolucaoindividual.update({ where: { id_evolucao_individual: id }, data: updateDto });
+    const dataUpdate: any = { ...updateDto };
+    if (dataUpdate.observacoes) {
+      dataUpdate.observacoes = this.sanitizeObservacoes(dataUpdate.observacoes);
+    }
+    const updated = await this.prisma.evolucaoindividual.update({ where: { id_evolucao_individual: id }, data: dataUpdate });
     return {
       message: 'Evolução individual atualizada com sucesso.',
       evolucao: updated,

@@ -12,10 +12,13 @@ model evolucaoindividual {
   id_morador             Int
   id_usuario             Int
   data_hora              DateTime               @default(now())
-  observacoes            String
+  // Aumentado para suportar até 1000 caracteres (antes default ~191 causava P2000 em textos maiores)
+  observacoes            String                 @db.VarChar(1000)
   morador                morador                @relation(fields: [id_morador], references: [id_morador], map: "EvolucaoIndividual_id_morador_fkey")
   usuario                usuario                @relation(fields: [id_usuario], references: [id_usuario], map: "EvolucaoIndividual_id_usuario_fkey")
   relatoriodiariogeral   relatoriodiariogeral[]
+  // relação pivot nova para múltiplos relatórios
+  relatoriosPivot        RelatorioEvolucao[]
 
   @@index([id_morador], map: "EvolucaoIndividual_id_morador_fkey")
   @@index([id_usuario], map: "EvolucaoIndividual_id_usuario_fkey")
@@ -101,9 +104,11 @@ model relatoriodiariogeral {
   id_usuario                Int
   id_evolucao_individual    Int
   data_hora                 DateTime           @default(now())
-  observacoes               String
+  observacoes               String             @db.Text
   evolucaoindividual        evolucaoindividual @relation(fields: [id_evolucao_individual], references: [id_evolucao_individual], map: "RelatorioDiarioGeral_id_evolucao_individual_fkey")
   usuario                   usuario            @relation(fields: [id_usuario], references: [id_usuario], map: "RelatorioDiarioGeral_id_usuario_fkey")
+  // Fase de transição: nova relação N:N via tabela pivot
+  evolucoes                 RelatorioEvolucao[]
 
   @@index([id_evolucao_individual], map: "RelatorioDiarioGeral_id_evolucao_individual_fkey")
   @@index([id_usuario], map: "RelatorioDiarioGeral_id_usuario_fkey")
@@ -124,6 +129,18 @@ model usuario {
   morador              morador[]
   relatoriodiariogeral relatoriodiariogeral[]
   medico               medico[]
+}
+
+/// Tabela pivot para suportar múltiplas evoluções em um relatório diário geral.
+/// Fase 1: adicionada sem remover campo id_evolucao_individual legado.
+model RelatorioEvolucao {
+  id_relatorio_diario_geral Int
+  id_evolucao_individual    Int
+  relatorio                 relatoriodiariogeral @relation(fields: [id_relatorio_diario_geral], references: [id_relatorio_diario_geral], onDelete: Cascade)
+  evolucao                  evolucaoindividual   @relation(fields: [id_evolucao_individual], references: [id_evolucao_individual], onDelete: Cascade)
+
+  @@id([id_relatorio_diario_geral, id_evolucao_individual])
+  @@index([id_evolucao_individual])
 }
 
 

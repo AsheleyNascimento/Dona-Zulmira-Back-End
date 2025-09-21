@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRelatorioGeralDto } from './dto/create-relatorio-geral.dto';
 import { UpdateRelatorioGeralDto } from './dto/update-relatorio-geral.dto';
@@ -6,23 +6,69 @@ import { UpdateRelatorioGeralDto } from './dto/update-relatorio-geral.dto';
 @Injectable()
 export class RelatorioGeralService {
   constructor(private readonly prisma: PrismaService) {}
+  private readonly MAX_OBS = 8000; // limite lógico de observações
+
+  private sanitizeObservacoes(text?: string) {
+    if (!text) return '';
+    const trimmed = text.trim();
+    if (trimmed.length <= this.MAX_OBS) return trimmed;
+    return trimmed.slice(0, this.MAX_OBS);
+  }
 
   async create(createRelatorioGeralDto: CreateRelatorioGeralDto, id_usuario: number) {
-    // Verifica existência de usuário e evolução individual
     const usuario = await this.prisma.usuario.findUnique({ where: { id_usuario } });
     if (!usuario) throw new NotFoundException('Usuário não encontrado');
-    const evolucao = await this.prisma.evolucaoindividual.findUnique({ where: { id_evolucao_individual: createRelatorioGeralDto.id_evolucao_individual } });
-    if (!evolucao) throw new NotFoundException('Evolução individual não encontrada');
-    // Cria o relatório
-    const relatorio = await this.prisma.relatoriodiariogeral.create({
+
+    // Suporte legado (um único id) ou novo (array ids_evolucoes)
+    let evolucaoIds: number[] = [];
+    if (createRelatorioGeralDto.ids_evolucoes && createRelatorioGeralDto.ids_evolucoes.length > 0) {
+      evolucaoIds = [...new Set(createRelatorioGeralDto.ids_evolucoes.map(Number))];
+    } else if (createRelatorioGeralDto.id_evolucao_individual) {
+      evolucaoIds = [Number(createRelatorioGeralDto.id_evolucao_individual)];
+    } else {
+      throw new BadRequestException('Informe pelo menos uma evolução (ids_evolucoes ou id_evolucao_individual legado).');
+    }
+
+    const evolucoes = await this.prisma.evolucaoindividual.findMany({
+      where: { id_evolucao_individual: { in: evolucaoIds } },
+      select: { id_evolucao_individual: true },
+    });
+    if (evolucoes.length !== evolucaoIds.length) {
+      throw new NotFoundException('Uma ou mais evoluções não encontradas');
+    }
+
+    // Estratégia fase 1: persiste o primeiro ID no campo legado e cria vínculos explícitos na tabela pivot.
+    // (Evita qualquer comportamento inesperado do nested create enquanto validamos a migração.)
+    const dataRelatorio = await this.prisma.relatoriodiariogeral.create({
       data: {
         id_usuario,
-        id_evolucao_individual: createRelatorioGeralDto.id_evolucao_individual,
+        id_evolucao_individual: evolucaoIds[0], // legado
         data_hora: createRelatorioGeralDto.data_hora ? new Date(createRelatorioGeralDto.data_hora) : undefined,
-        observacoes: createRelatorioGeralDto.observacoes,
-      },
+        observacoes: this.sanitizeObservacoes(createRelatorioGeralDto.observacoes),
+      }
     });
-    return { message: 'Relatório criado com sucesso', relatorio };
+
+    // Cria registros na pivot (incluindo também o primeiro para manter consistência N:N)
+    if (evolucaoIds.length > 0) {
+      await this.prisma.relatorioEvolucao.createMany({
+        data: evolucaoIds.map(id => ({
+          id_relatorio_diario_geral: dataRelatorio.id_relatorio_diario_geral,
+          id_evolucao_individual: id
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    // Retorna já com include atualizado
+    const relatorioCompleto = await this.prisma.relatoriodiariogeral.findUnique({
+      where: { id_relatorio_diario_geral: dataRelatorio.id_relatorio_diario_geral },
+      include: {
+        usuario: { select: { id_usuario: true, nome_completo: true } },
+        evolucoes: { include: { evolucao: { select: { id_evolucao_individual: true, observacoes: true, data_hora: true, usuario: { select: { id_usuario: true, nome_completo: true } } } } } }
+      }
+    });
+
+    return { message: 'Relatório criado com sucesso', relatorio: relatorioCompleto };
   }
 
   async findAll(query: any = {}) {
@@ -41,7 +87,7 @@ export class RelatorioGeralService {
         where,
         include: {
           usuario: { select: { id_usuario: true, nome_completo: true, email: true } },
-          evolucaoindividual: { select: { id_evolucao_individual: true, observacoes: true, data_hora: true } },
+          evolucoes: { include: { evolucao: { select: { id_evolucao_individual: true, observacoes: true, data_hora: true, usuario: { select: { id_usuario: true, nome_completo: true } } } } } },
         },
         orderBy: { data_hora: 'desc' },
         skip,
@@ -63,7 +109,7 @@ export class RelatorioGeralService {
       where: { id_relatorio_diario_geral: id },
       include: {
         usuario: { select: { id_usuario: true, nome_completo: true, email: true } },
-        evolucaoindividual: { select: { id_evolucao_individual: true, observacoes: true, data_hora: true } },
+        evolucoes: { include: { evolucao: { select: { id_evolucao_individual: true, observacoes: true, data_hora: true, usuario: { select: { id_usuario: true, nome_completo: true } } } } } },
       },
     });
     if (!relatorio) throw new NotFoundException('Relatório não encontrado');
@@ -71,14 +117,38 @@ export class RelatorioGeralService {
   }
 
   async update(id: number, updateRelatorioGeralDto: UpdateRelatorioGeralDto) {
-    const relatorio = await this.prisma.relatoriodiariogeral.findUnique({ where: { id_relatorio_diario_geral: id } });
-    if (!relatorio) throw new NotFoundException('Relatório não encontrado');
+    const existente = await this.prisma.relatoriodiariogeral.findUnique({ where: { id_relatorio_diario_geral: id } });
+    if (!existente) throw new NotFoundException('Relatório não encontrado');
+
+    let evolucaoIds: number[] | undefined = undefined;
+    if (updateRelatorioGeralDto.ids_evolucoes) {
+      evolucaoIds = [...new Set(updateRelatorioGeralDto.ids_evolucoes.map(Number))];
+      const evolucoes = await this.prisma.evolucaoindividual.findMany({ where: { id_evolucao_individual: { in: evolucaoIds } } });
+      if (evolucoes.length !== evolucaoIds.length) throw new NotFoundException('Uma ou mais evoluções não encontradas');
+    }
+
     const updated = await this.prisma.relatoriodiariogeral.update({
       where: { id_relatorio_diario_geral: id },
       data: {
-        ...updateRelatorioGeralDto,
-        data_hora: updateRelatorioGeralDto.data_hora ? new Date(updateRelatorioGeralDto.data_hora) : undefined,
+        observacoes: updateRelatorioGeralDto.observacoes !== undefined
+          ? this.sanitizeObservacoes(updateRelatorioGeralDto.observacoes)
+          : existente.observacoes,
+        data_hora: updateRelatorioGeralDto.data_hora ? new Date(updateRelatorioGeralDto.data_hora) : existente.data_hora,
+        ...(evolucaoIds
+          ? {
+              evolucoes: {
+                deleteMany: {},
+                create: evolucaoIds.map(idE => ({ id_evolucao_individual: idE }))
+              },
+              // mantém compatibilidade do campo legado com o primeiro id
+              id_evolucao_individual: evolucaoIds[0]
+            }
+          : {}),
       },
+      include: {
+        usuario: { select: { id_usuario: true, nome_completo: true } },
+        evolucoes: { include: { evolucao: { select: { id_evolucao_individual: true, observacoes: true, data_hora: true, usuario: { select: { id_usuario: true, nome_completo: true } } } } } }
+      }
     });
     return { message: 'Relatório atualizado com sucesso', relatorio: updated };
   }
