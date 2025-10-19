@@ -1,6 +1,5 @@
 import { PrismaService } from '../prisma/prisma.service'; // Criar o db
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
-import * as bcrypt from 'bcrypt';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { HashingService } from '../auth/hashing/hashing.service';
 import {
@@ -13,14 +12,13 @@ import {
 export class UsuarioService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly hashingService: HashingService, // Se necessário, mas não parece ser usado aqui
+    private readonly hashingService: HashingService,
   ) {}
 
-  // Defina o papel do usuário aqui, ou obtenha-o de algum lugar
+
   async create(createUsuarioDto: CreateUsuarioDto) {
-    // Certifique-se de que 'cpf' existe no seu schema Prisma. Caso não exista, substitua por um campo único válido, como 'id_usuario' ou 'email'.
-    const usuarioExistente = await this.prisma.usuario.findUnique({
-      where: { cpf: createUsuarioDto.cpf } as any, // Remova 'as any' se o tipo estiver correto no schema
+  const usuarioExistente = await this.prisma.usuario.findUnique({
+      where: { cpf: createUsuarioDto.cpf } as any,
     });
     if (usuarioExistente) {
       throw new ConflictException('Usuario cadastrado no sistema');
@@ -38,10 +36,7 @@ export class UsuarioService {
     );
 
     return this.prisma.usuario.create({
-      // Criar o db
       data: {
-        // Use the correct field names as defined in your Prisma schema
-        // For example, if the field is 'username' instead of 'nome_usuario':
         nome_usuario: createUsuarioDto.nome_usuario,
         senha_hash: senhaHash,
         nome_completo: createUsuarioDto.nome_completo,
@@ -125,7 +120,7 @@ export class UsuarioService {
 
     // Se for enviada uma nova senha, gerar o hash e substituir no campo certo
     if (updateUsuarioDto.senha) {
-      const senhaHash = await bcrypt.hash(updateUsuarioDto.senha, 10);
+      const senhaHash = await this.hashingService.hashPassword(updateUsuarioDto.senha);
       data.senha_hash = senhaHash;
       delete (data as { senha?: string }).senha; // Remover o campo 'senha' para evitar erro
     }

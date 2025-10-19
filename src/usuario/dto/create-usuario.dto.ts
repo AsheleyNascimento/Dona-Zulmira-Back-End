@@ -3,11 +3,20 @@ import {
   IsString,
   IsEmail,
   IsBoolean,
-  Matches,
   MinLength,
   IsNotEmpty,
+  IsEnum,
 } from 'class-validator';
 import { IsCPF } from '../../app/common/validators/cpf.validator';
+
+export enum Funcao {
+  ADMINISTRADOR = 'Administrador',
+  ENFERMEIRO = 'Enfermeiro',
+  TECNICO_ENFERMAGEM = 'Tecnico de Enfermagem',
+  CUIDADOR = 'Cuidador',
+  MEDICO = 'Medico',
+  FARMACEUTICO = 'Farmaceutico',
+}
 
 export class CreateUsuarioDto {
   @IsNotEmpty()
@@ -32,8 +41,8 @@ export class CreateUsuarioDto {
   email: string;
 
   @IsNotEmpty()
-  @IsString()
-  funcao: string;
+  @IsEnum(Funcao)
+  funcao: Funcao;
 
   @IsNotEmpty()
   @IsBoolean()

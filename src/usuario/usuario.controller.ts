@@ -27,18 +27,13 @@ import {
 @ApiTags('usuario')
 @ApiBearerAuth()
 @Controller('usuario')
-/* @UseGuards(AuthTokenGuard, RolesGuard)
-@Roles('*') */
+@UseGuards(AuthTokenGuard, RolesGuard)
+@Roles('*') 
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
 
-  @Get('me')
-  getProfile(@CurrentUser() pessoa) {
-    return pessoa; // Dados da pessoa já populados no guard
-  }
-
   @Get('buscar')
-  /*  @Roles('Administrador') */
+  @Roles('Administrador') 
   async findOneBySingleQuery(
     @Query('cpf') cpf?: string,
     @Query('email') email?: string,
@@ -48,7 +43,7 @@ export class UsuarioController {
   }
 
   @Post()
-  /* @Roles('Administrador') */
+  @Roles('Administrador')
   @ApiOperation({ summary: 'Cadastrar novo usuário' })
   @ApiResponse({ status: 201, description: 'Cadastro efetuado com sucesso.' })
   @ApiResponse({ status: 409, description: 'Usuário ou e-mail já cadastrado.' })
