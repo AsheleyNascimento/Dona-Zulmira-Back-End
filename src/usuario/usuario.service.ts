@@ -6,6 +6,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 
 @Injectable()
@@ -115,20 +116,104 @@ export class UsuarioService {
     });
   }
 
-  async update(id: number, updateUsuarioDto: UpdateUsuarioDto) {
-    const data: any = { ...updateUsuarioDto };
+async update(id: number, updateUsuarioDto: UpdateUsuarioDto) {
+    
+    // 1. [LÓGICA MOVIDA] Buscar o usuário antigo PRIMEIRO
+    const usuarioAntigo = await this.prisma.usuario.findUnique({
+      where: { id_usuario: id },
+    });
 
-    // Se for enviada uma nova senha, gerar o hash e substituir no campo certo
-    if (updateUsuarioDto.senha) {
-      const senhaHash = await this.hashingService.hashPassword(updateUsuarioDto.senha);
-      data.senha_hash = senhaHash;
-      delete (data as { senha?: string }).senha; // Remover o campo 'senha' para evitar erro
+    // 2. [LÓGICA MOVIDA] Se não existir, lança a exceção
+    if (!usuarioAntigo) {
+      throw new NotFoundException(`Usuário com ID ${id} não encontrado.`);
     }
 
-    return this.prisma.usuario.update({
+    // 3. [LÓGICA EXISTENTE] Verificação de conflitos (CPF/Email)
+    const data: any = { ...updateUsuarioDto };
+
+    if (data.cpf) {
+      const cpfJaExiste = await this.prisma.usuario.findFirst({
+        where: { cpf: data.cpf, id_usuario: { not: id } },
+      });
+      if (cpfJaExiste) {
+        throw new ConflictException('CPF já cadastrado no sistema');
+      }
+    }
+    if (data.email) {
+      const emailJaExiste = await this.prisma.usuario.findFirst({
+        where: { email: data.email, id_usuario: { not: id } },
+      });
+      if (emailJaExiste) {
+        throw new ConflictException('Email já cadastrado no sistema');
+      }
+    }
+
+    // 4. [LÓGICA EXISTENTE] Hash da senha
+    if (data.senha) {
+      const senhaHash = await this.hashingService.hashPassword(data.senha);
+      data.senha_hash = senhaHash;
+      delete (data as { senha?: string }).senha;
+    }
+
+    // 5. [LÓGICA EXISTENTE] Executar o update
+    const usuarioAtualizado = await this.prisma.usuario.update({
       where: { id_usuario: id },
       data,
     });
+
+    // 6. [LÓGICA MOVIDA] Lógica de detecção de mudanças
+    const alteracoes: string[] = [];
+    if (
+      data.nome_usuario &&
+      data.nome_usuario !== usuarioAntigo.nome_usuario
+    ) {
+      alteracoes.push('nome_usuario');
+    }
+    if (
+      data.nome_completo &&
+      data.nome_completo !== usuarioAntigo.nome_completo
+    ) {
+      alteracoes.push('nome_completo');
+    }
+    if (
+      data.email &&
+      data.email !== usuarioAntigo.email
+    ) {
+      alteracoes.push('email');
+    }
+    if (
+      data.funcao &&
+      data.funcao !== usuarioAntigo.funcao
+    ) {
+      alteracoes.push('funcao');
+    }
+    if (
+      data.situacao !== undefined && // Correto para booleano
+      data.situacao !== usuarioAntigo.situacao
+    ) {
+      alteracoes.push('situacao');
+    }
+    if (updateUsuarioDto.senha) { // Checa o DTO original
+      alteracoes.push('senha');
+    }
+
+    // 7. [LÓGICA MOVIDA] Gerar a mensagem de retorno
+    const message =
+      alteracoes.length > 0
+        ? alteracoes
+            .map((campo) => `${campo} alterado com sucesso`)
+            .join(' | ')
+        : 'Nenhuma alteração detectada';
+
+    // 8. Retornar o objeto completo que o Controller espera
+    if (usuarioAtualizado && typeof usuarioAtualizado === 'object' && 'senha_hash' in usuarioAtualizado) {
+      delete (usuarioAtualizado as { senha_hash?: string }).senha_hash; // Always remove the hash!
+    }
+    
+    return {
+      message: message,
+      usuario: usuarioAtualizado,
+    };
   }
 
   async remove(id: number) {

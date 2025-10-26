@@ -27,8 +27,8 @@ import {
 @ApiTags('usuario')
 @ApiBearerAuth()
 @Controller('usuario')
-@UseGuards(AuthTokenGuard, RolesGuard)
-@Roles('*') 
+//@UseGuards(AuthTokenGuard, RolesGuard)
+//@Roles('*') 
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
 
@@ -91,78 +91,33 @@ export class UsuarioController {
     return this.usuarioService.findOne(+id);
   }
 
-  @Patch(':id')
-  @Roles('Administrador')
-  @ApiOperation({ summary: 'Atualizar usuário' })
-  @ApiResponse({ status: 200, description: 'Usuário atualizado com sucesso.' })
-  @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
-  async update(
-    @Param('id', ParseIntIdPipe) id: number,
-    @Body() updateUsuarioDto: UpdateUsuarioDto,
-  ) {
-    try {
-      const usuarioAntigo = await this.usuarioService.findOne(id);
-      if (!usuarioAntigo) {
-        return {
-          statusCode: 404,
-          message: 'Usuário não encontrado',
-        };
-      }
-      const usuarioAtualizado = await this.usuarioService.update(
-        id,
-        updateUsuarioDto,
-      );
-      const alteracoes: string[] = [];
-      if (
-        updateUsuarioDto.nome_usuario &&
-        updateUsuarioDto.nome_usuario !== usuarioAntigo.nome_usuario
-      ) {
-        alteracoes.push('nome_usuario');
-      }
-      if (
-        updateUsuarioDto.nome_completo &&
-        updateUsuarioDto.nome_completo !== usuarioAntigo.nome_completo
-      ) {
-        alteracoes.push('nome_completo');
-      }
-      if (
-        updateUsuarioDto.email &&
-        updateUsuarioDto.email !== usuarioAntigo.email
-      ) {
-        alteracoes.push('email');
-      }
-      if (
-        updateUsuarioDto.funcao &&
-        updateUsuarioDto.funcao !== usuarioAntigo.funcao
-      ) {
-        alteracoes.push('funcao');
-      }
-      if (
-        updateUsuarioDto.situacao !== undefined &&
-        updateUsuarioDto.situacao !== usuarioAntigo.situacao
-      ) {
-        alteracoes.push('situacao');
-      }
-      if (updateUsuarioDto.senha) {
-        alteracoes.push('senha');
-      }
-      return {
-        statusCode: 200,
-        message:
-          alteracoes.length > 0
-            ? alteracoes
-                .map((campo) => `${campo} alterado com sucesso`)
-                .join(' | ')
-            : 'Nenhuma alteração detectada',
-        usuario: usuarioAtualizado,
-      };
-    } catch (error) {
-      return {
-        statusCode: error.status || 400,
-        message: error.message || 'Erro ao atualizar usuário',
-      };
-    }
+@Patch(':id')
+//@Roles('Administrador')
+@ApiOperation({ summary: 'Atualizar usuário' })
+@ApiResponse({ status: 200, description: 'Usuário atualizado com sucesso.' })
+@ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
+@ApiResponse({ status: 409, description: 'Conflito de dados (CPF/Email já existe).' }) // Bom adicionar
+@ApiResponse({ status: 400, description: 'Dados inválidos.' })
+async update(
+  @Param('id', ParseIntIdPipe) id: number,
+  @Body() updateUsuarioDto: UpdateUsuarioDto,
+) {
+  try {
+    const resultado = await this.usuarioService.update(id, updateUsuarioDto);
+
+    return {
+      statusCode: 200,
+      message: resultado.message,
+      usuario: resultado.usuario, 
+    };
+
+  } catch (error) {
+    return {
+      statusCode: error.status || 500,
+      message: error.message || 'Erro interno ao atualizar usuário',
+    };
   }
+}
 
   @Delete(':id')
   @Roles('Administrador')
