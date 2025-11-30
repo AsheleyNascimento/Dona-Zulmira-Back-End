@@ -5,19 +5,11 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // Enable CORS
-  // Permitimos localhost (porta padrão do Next) e IP/porta da rede local usada no desenvolvimento
-  // Enable CORS
-  // Permitimos localhost (porta padrão do Next) e IP/porta da rede local usada no desenvolvimento
-  // Ajustes: incluir OPTIONS e permitir headers comuns (Content-Type, Authorization)
   app.enableCors({
+    // Permite o front em produção (porta 3001) e localhost durante testes
     origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://192.168.1.92:3001',
-      // Permitimos também acesso ao front rodando em 192.168.1.92:3000
-      'http://192.168.1.92:3000'
+      'http://192.168.1.220:3001',
+      'http://localhost:3001'
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type,Authorization',
@@ -43,7 +35,6 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   const port = Number(process.env.PORT ?? 4000);
-  // Listen on 0.0.0.0 so the server is reachable from other machines in the LAN
   await app.listen(port, '0.0.0.0');
 }
 bootstrap();
