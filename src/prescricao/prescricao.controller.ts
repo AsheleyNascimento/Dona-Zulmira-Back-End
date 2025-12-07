@@ -32,10 +32,10 @@ import {
 @Controller('prescricao')
 @UseGuards(AuthTokenGuard, RolesGuard)
 export class PrescricaoController {
-  constructor(private readonly service: PrescricaoService) {}
+  constructor(private readonly service: PrescricaoService) { }
 
   @Post()
-  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
+  @Roles('Enfermeiro', 'Tecnico de Enfermagem', 'Cuidador', 'Farmaceutico')
   @ApiOperation({ summary: 'Criar uma nova prescrição' })
   @ApiBody({ type: CreatePrescricaoDto })
   @ApiResponse({ status: 201, description: 'Prescrição criada com sucesso.' })
@@ -44,7 +44,7 @@ export class PrescricaoController {
   }
 
   @Post('completa')
-  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
+  @Roles('Enfermeiro', 'Tecnico de Enfermagem', 'Cuidador', 'Farmaceutico')
   @ApiOperation({ summary: 'Criar prescrição com itens (medicamentos) em uma única chamada' })
   @ApiBody({ type: CreatePrescricaoCompletaDto })
   @ApiResponse({ status: 201, description: 'Prescrição e itens criados com sucesso.' })
@@ -104,7 +104,7 @@ export class PrescricaoController {
   }
 
   @Patch(':id')
-  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
+  @Roles('Enfermeiro', 'Tecnico de Enfermagem', 'Farmaceutico')
   @ApiOperation({ summary: 'Atualizar uma prescrição' })
   @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: UpdatePrescricaoDto })
@@ -114,7 +114,7 @@ export class PrescricaoController {
   }
 
   @Delete(':id')
-  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
+  @Roles('Enfermeiro', 'Tecnico de Enfermagem', 'Farmaceutico')
   @ApiOperation({ summary: 'Remover uma prescrição' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Prescrição removida.' })

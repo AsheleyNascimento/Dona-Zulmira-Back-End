@@ -13,13 +13,13 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from '@nes
 @Controller('relatorio-geral')
 @UseGuards(AuthTokenGuard, RolesGuard)
 export class RelatorioGeralController {
-  constructor(private readonly relatorioGeralService: RelatorioGeralService) {}
+  constructor(private readonly relatorioGeralService: RelatorioGeralService) { }
 
   @Post()
   @ApiOperation({ summary: 'Criar novo relatório geral' })
   @ApiBody({ type: CreateRelatorioGeralDto })
   @ApiResponse({ status: 201, description: 'Relatório criado com sucesso.' })
-  @Roles('Enfermeiro', 'Cuidador')
+  @Roles('Enfermeiro', 'Tecnico de Enfermagem', 'Cuidador', 'Farmaceutico')
   create(@Body() createRelatorioGeralDto: CreateRelatorioGeralDto, @CurrentUser() user: any) {
     return this.relatorioGeralService.create(createRelatorioGeralDto, user.id_usuario);
   }
@@ -27,7 +27,7 @@ export class RelatorioGeralController {
   @Get()
   @ApiOperation({ summary: 'Listar relatórios gerais' })
   @ApiResponse({ status: 200, description: 'Lista de relatórios.' })
-  @Roles('Enfermeiro', 'Cuidador')
+  @Roles('Enfermeiro', 'Cuidador', 'Tecnico de Enfermagem', 'Farmaceutico')
   findAll(@Query() query) {
     return this.relatorioGeralService.findAll(query);
   }
@@ -36,7 +36,7 @@ export class RelatorioGeralController {
   @ApiOperation({ summary: 'Buscar relatório geral por ID' })
   @ApiResponse({ status: 200, description: 'Relatório encontrado.' })
   @ApiResponse({ status: 404, description: 'Relatório não encontrado.' })
-  @Roles('Enfermeiro', 'Cuidador')
+  @Roles('Enfermeiro', 'Tecnico de Enfermagem', 'Cuidador', 'Farmaceutico')
   findOne(@Param('id') id: string) {
     return this.relatorioGeralService.findOne(+id);
   }
@@ -46,7 +46,7 @@ export class RelatorioGeralController {
   @ApiBody({ type: UpdateRelatorioGeralDto })
   @ApiResponse({ status: 200, description: 'Relatório atualizado com sucesso.' })
   @ApiResponse({ status: 404, description: 'Relatório não encontrado.' })
-  @Roles('Enfermeiro', 'Cuidador')
+  @Roles('Enfermeiro', 'Tecnico de Enfermagem', 'Farmaceutico')
   update(@Param('id') id: string, @Body() updateRelatorioGeralDto: UpdateRelatorioGeralDto) {
     return this.relatorioGeralService.update(+id, updateRelatorioGeralDto);
   }
@@ -55,7 +55,7 @@ export class RelatorioGeralController {
   @ApiOperation({ summary: 'Remover relatório geral' })
   @ApiResponse({ status: 200, description: 'Relatório removido com sucesso.' })
   @ApiResponse({ status: 404, description: 'Relatório não encontrado.' })
-  @Roles('Enfermeiro', 'Cuidador')
+  @Roles('Enfermeiro', 'Tecnico de Enfermagem', 'Farmaceutico')
   remove(@Param('id') id: string) {
     return this.relatorioGeralService.remove(+id);
   }

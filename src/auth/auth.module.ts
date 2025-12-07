@@ -6,12 +6,14 @@ import { AuthService } from './auth.service';
 import { ConfigModule } from '@nestjs/config';
 import jwtConfig from './config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
+import { MailModule } from '../mail/mail.module';
 
 @Global()
 @Module({
   imports: [
     ConfigModule.forFeature(jwtConfig),
     JwtModule.registerAsync(jwtConfig.asProvider()),
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -23,4 +25,4 @@ import { JwtModule } from '@nestjs/jwt';
   ],
   exports: [HashingService, JwtModule, ConfigModule],
 })
-export class AuthModule {}
+export class AuthModule { }

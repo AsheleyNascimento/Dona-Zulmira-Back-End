@@ -26,7 +26,7 @@ import { CurrentUser } from '../app/common/decorators/current-user.decorator';
 @ApiBearerAuth()
 @Controller('morador')
 export class MoradorController {
-  constructor(private readonly moradorService: MoradorService) {}
+  constructor(private readonly moradorService: MoradorService) { }
 
   @Post()
   @Roles('Administrador')
@@ -51,7 +51,7 @@ export class MoradorController {
   }
 
   @Get()
-  @Roles('Administrador', 'Enfermeiro', 'Cuidador')
+  @Roles('Administrador', 'Enfermeiro', 'Cuidador', 'Tecnico de Enfermagem', 'Farmaceutico')
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -69,7 +69,7 @@ export class MoradorController {
   }
 
   @Get(':id')
-  @Roles('Administrador', 'Enfermeiro', 'Cuidador')
+  @Roles('Administrador', 'Enfermeiro', 'Cuidador', 'Tecnico de Enfermagem', 'Farmaceutico')
   findOne(@Param('id', ParseIntIdPipe) id: number) {
     return this.moradorService.findOne(+id);
   }

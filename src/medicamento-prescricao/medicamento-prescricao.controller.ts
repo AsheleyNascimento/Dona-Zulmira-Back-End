@@ -12,7 +12,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery, ApiBody, A
 @Controller('medicamento-prescricao')
 @UseGuards(AuthTokenGuard, RolesGuard)
 export class MedicamentoPrescricaoController {
-  constructor(private readonly service: MedicamentoPrescricaoService) {}
+  constructor(private readonly service: MedicamentoPrescricaoService) { }
 
   @Post()
   @Roles('Enfermeiro', 'Cuidador', 'Administrador')
@@ -44,7 +44,7 @@ export class MedicamentoPrescricaoController {
   }
 
   @Patch(':id')
-  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
+  @Roles('Enfermeiro', 'Administrador', 'Tecnico de Enfermagem', 'Farmaceutico')
   @ApiOperation({ summary: 'Atualizar vínculo' })
   @ApiParam({ name: 'id', type: Number })
   @ApiBody({ type: UpdateMedicamentoPrescricaoDto })
@@ -54,7 +54,7 @@ export class MedicamentoPrescricaoController {
   }
 
   @Delete(':id')
-  @Roles('Enfermeiro', 'Cuidador', 'Administrador')
+  @Roles('Enfermeiro', 'Administrador', 'Tecnico de Enfermagem', 'Farmaceutico')
   @ApiOperation({ summary: 'Remover vínculo' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Vínculo removido.' })

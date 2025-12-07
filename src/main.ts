@@ -9,7 +9,7 @@ async function bootstrap() {
     // Permite o front em produção (porta 3001) e localhost durante testes
     origin: [
       'http://192.168.1.220:3001',
-      'http://localhost:3001'
+      'http://localhost:3000'
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type,Authorization',

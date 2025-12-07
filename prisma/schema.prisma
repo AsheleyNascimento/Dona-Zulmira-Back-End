@@ -91,6 +91,7 @@ model prescricao {
   id_medico             Int
   mes                   String
   ano                   String
+  data_prescricao       DateTime                @default(now())
   medicamentoprescricao medicamentoprescricao[]
   medico                medico                  @relation(fields: [id_medico], references: [id_medico], map: "Prescricao_id_medico_fkey")
   morador               morador                 @relation(fields: [id_morador], references: [id_morador], map: "Prescricao_id_morador_fkey")
@@ -129,6 +130,10 @@ model usuario {
   morador              morador[]
   relatoriodiariogeral relatoriodiariogeral[]
   medico               medico[]
+
+  // Campos para redefinição de senha
+  passwordResetToken   String?  @unique
+  passwordResetExpires DateTime?
 }
 
 /// Tabela pivot para suportar múltiplas evoluções em um relatório diário geral.

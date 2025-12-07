@@ -11,7 +11,7 @@ import { CreatePrescricaoCompletaDto } from './dto/create-prescricao-completa.dt
 
 @Injectable()
 export class PrescricaoService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   create(dto: CreatePrescricaoDto): Promise<PrescricaoModel> {
     return this.prisma.prescricao.create({ data: dto });
@@ -247,6 +247,7 @@ export class PrescricaoService {
             aplicador,
             id_medicamento_prescricao: mp.id_medicamento_prescricao,
             id_medicamento: mp.medicamento?.id_medicamento ?? null,
+            data_prescricao: p.data_prescricao ? p.data_prescricao.toISOString() : null,
           });
         }
       } else {
@@ -264,6 +265,7 @@ export class PrescricaoService {
           aplicador: null,
           id_medicamento_prescricao: null,
           id_medicamento: null,
+          data_prescricao: p.data_prescricao ? p.data_prescricao.toISOString() : null,
         });
       }
     }
@@ -291,6 +293,7 @@ type PrescricaoJoin = {
   id_medico: number;
   mes: string;
   ano: string;
+  data_prescricao?: Date;
   medicamentoprescricao?: Array<{
     id_medicamento_prescricao: number;
     medicacao?: Array<{
@@ -316,6 +319,7 @@ type RowAnalitico = {
   aplicador: string | null;
   id_medicamento_prescricao: number | null;
   id_medicamento: number | null;
+  data_prescricao: string | null;
 };
 
 const include = {

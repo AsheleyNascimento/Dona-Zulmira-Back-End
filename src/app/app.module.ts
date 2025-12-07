@@ -13,6 +13,7 @@ import { PrescricaoModule } from 'src/prescricao/prescricao.module';
 import { MedicamentoPrescricaoModule } from 'src/medicamento-prescricao/medicamento-prescricao.module';
 import { MedicacaoModule } from 'src/medicacao/medicacao.module';
 import { AiModule } from 'src/ai/ai.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -28,8 +29,9 @@ import { AiModule } from 'src/ai/ai.module';
     MedicamentoPrescricaoModule,
     MedicacaoModule,
     AiModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
